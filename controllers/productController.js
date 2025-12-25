@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
-import { uploadToCloudinary } from "../utils/uploadtocloudinary.js";
+import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 
 // GET ALL PRODUCTS BY TYPE (FASHION or BEAUTY)
 export const getProductsByType = async (req, res) => {
