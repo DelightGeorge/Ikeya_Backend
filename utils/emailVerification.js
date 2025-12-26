@@ -1,15 +1,22 @@
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: 587, 
-  secure: false, 
+  service: 'gmail', // Telling nodemailer exactly which service to use
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // Must be false for 587
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  // These extra settings help bypass cloud firewalls
+  pool: true, 
+  maxConnections: 1,
+  rateDelta: 20000,
+  rateLimit: 5,
   tls: {
-    rejectUnauthorized: false 
+    ciphers: 'SSLv3',
+    rejectUnauthorized: false
   }
 });
 
