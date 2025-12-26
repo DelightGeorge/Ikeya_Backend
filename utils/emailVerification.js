@@ -5,12 +5,19 @@ dotenv.config(); // Load .env variables first
 
 import { Resend } from "resend";
 
-// Check for missing API key
 if (!process.env.RESEND_API_KEY) {
   console.warn("⚠️ RESEND_API_KEY is missing! Emails will not be sent.");
 }
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Use Gmail in local development for testing
+const getFromEmail = () => {
+  if (process.env.NODE_ENV === "production") {
+    return "Ikeyà Support <no-reply@ikeya.shop>";
+  }
+  return "Ikeyà Support <delightgeorge105@gmail.com>"; // your Gmail for testing
+};
 
 const brandHeader = `
   <div style="text-align: center; margin-bottom: 30px;">
@@ -21,17 +28,17 @@ const brandHeader = `
   </div>
 `;
 
-// Helper to send emails and log messageId
 const sendEmail = async ({ to, subject, html }) => {
-  if (!process.env.RESEND_API_KEY) return; // Don't attempt sending if key missing
+  if (!process.env.RESEND_API_KEY) return;
   try {
     const response = await resend.emails.send({
-      from: "Ikeyà Support <no-reply@ikeya.shop>",
+      from: getFromEmail(),
       to,
       subject,
       html,
     });
-    console.log(`✅ Email sent to ${to}, messageId: ${response.id}`);
+    console.log(`✅ Email sent to ${to}`);
+    console.log("Full Resend response:", response);
   } catch (error) {
     console.error(`❌ Failed to send email to ${to}:`, error);
   }
