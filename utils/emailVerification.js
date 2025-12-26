@@ -5,19 +5,11 @@ dotenv.config(); // Load .env variables first
 
 import { Resend } from "resend";
 
-if (!process.env.RESEND_API_KEY) {
-  console.warn("⚠️ RESEND_API_KEY is missing! Emails will not be sent.");
-}
-
+// Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Use Gmail in local development for testing
-const getFromEmail = () => {
-  if (process.env.NODE_ENV === "production") {
-    return "Ikeyà Support <no-reply@ikeya.shop>";
-  }
-  return "Ikeyà Support <delightgeorge105@gmail.com>"; // your Gmail for testing
-};
+// Fallback 'from' address: use your Gmail if ikeya.shop is not verified
+const FROM_ADDRESS = "delightgeorge105@gmail.com"; // Testing fallback
 
 const brandHeader = `
   <div style="text-align: center; margin-bottom: 30px;">
@@ -28,17 +20,21 @@ const brandHeader = `
   </div>
 `;
 
+// Helper to send emails
 const sendEmail = async ({ to, subject, html }) => {
-  if (!process.env.RESEND_API_KEY) return;
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("⚠️ RESEND_API_KEY is missing! Emails will not be sent.");
+    return;
+  }
+
   try {
     const response = await resend.emails.send({
-      from: getFromEmail(),
+      from: `Ikeyà Support <${FROM_ADDRESS}>`, // Always comes from your Gmail for now
       to,
       subject,
       html,
     });
-    console.log(`✅ Email sent to ${to}`);
-    console.log("Full Resend response:", response);
+    console.log(`✅ Email sent to ${to}, messageId: ${response.id}`);
   } catch (error) {
     console.error(`❌ Failed to send email to ${to}:`, error);
   }
