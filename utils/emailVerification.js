@@ -67,3 +67,20 @@ export const sendLoginEmail = async (email, token) => {
     html 
   });
 };
+
+export const sendResetEmail = async (email, token) => {
+  const resetLink = `http://localhost:5173/reset-password?token=${token}`; 
+  
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Reset Your Ikeyà Password",
+    html: `
+      <h1>Password Reset Request</h1>
+      <p>Click the link below to reset your password. This link expires in 1 hour.</p>
+      <a href="${resetLink}">Reset Password</a>
+    `,
+  };
+
+  return transporter.sendMail(mailOptions);
+};
