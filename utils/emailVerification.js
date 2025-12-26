@@ -2,33 +2,32 @@ import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: 587, // Changed from 465 to 587
-  secure: false, // Must be false for 587
+  port: 587, 
+  secure: false, 
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
   tls: {
-    rejectUnauthorized: false // Helps connection on cloud servers
+    rejectUnauthorized: false 
   }
 });
 
-// ... (brandHeader stays the same)
+const brandHeader = `
+  <div style="text-align: center; margin-bottom: 30px;">
+    <h1 style="text-transform: uppercase; letter-spacing: 6px; color: #000; margin: 0; font-size: 28px;">Ikeyà</h1>
+    <p style="text-transform: uppercase; font-size: 9px; letter-spacing: 3px; color: #92400e; margin-top: 5px;">Originality is the only luxury</p>
+  </div>
+`;
 
+// 1. WELCOME EMAIL
 export const sendWelcomeEmail = async (email, name) => {
   try {
-    const html = `
-      <div style="font-family: 'Georgia', serif; max-width: 600px; margin: auto; padding: 50px 20px; background-color: #ffffff; border: 1px solid #f0f0f0;">
-        ${brandHeader}
-        <div style="color: #333; line-height: 1.8; text-align: center;">
-          <h2 style="font-weight: normal; font-style: italic; color: #1a1a1a;">Welcome, ${name}</h2>
-          <p style="font-size: 14px; color: #555;">Your journey into the house of Ikeyà has begun.</p>
-        </div>
-        <div style="margin-top: 40px; text-align: center;">
-          <a href="${process.env.FRONTEND_URL}/shop" style="background: #000; color: #fff; padding: 18px 35px; text-decoration: none; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; display: inline-block;">Explore the Collection</a>
-        </div>
-      </div>
-    `;
+    const html = `<div style="font-family: serif; max-width: 600px; margin: auto; padding: 50px 20px;">
+      ${brandHeader}
+      <h2 style="text-align: center;">Welcome, ${name}</h2>
+      <p style="text-align: center;">Your journey into the house of Ikeyà has begun.</p>
+    </div>`;
 
     await transporter.sendMail({ 
       from: `"Ikeyà Originals" <${process.env.SMTP_USER}>`, 
@@ -37,28 +36,46 @@ export const sendWelcomeEmail = async (email, name) => {
       html 
     });
   } catch (error) {
-    console.error("Email failed but continuing process:", error);
-    // We don't throw the error so the user can still register/login
+    console.error("Welcome email failed:", error);
   }
 };
 
-export const sendResetEmail = async (email, token) => {
-  // FIXED: Changed localhost to FRONTEND_URL
-  const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`; 
-  
+// 2. LOGIN EMAIL (The missing piece causing the crash)
+export const sendLoginEmail = async (email, token) => {
   try {
+    const loginUrl = `${process.env.FRONTEND_URL}/verify-login?token=${token}`;
+    const html = `<div style="font-family: serif; max-width: 600px; margin: auto; padding: 50px 20px;">
+      ${brandHeader}
+      <h2 style="text-align: center;">Sign In Request</h2>
+      <div style="text-align: center; margin: 40px 0;">
+        <a href="${loginUrl}" style="background: #92400e; color: #ffffff; padding: 18px 40px; text-decoration: none; text-transform: uppercase; letter-spacing: 3px;">Complete Login</a>
+      </div>
+    </div>`;
+
+    await transporter.sendMail({ 
+      from: `"Ikeyà Support" <${process.env.SMTP_USER}>`, 
+      to: email, 
+      subject: "Your Ikeyà Login Link", 
+      html 
+    });
+  } catch (error) {
+    console.error("Login email failed:", error);
+  }
+};
+
+// 3. RESET EMAIL
+export const sendResetEmail = async (email, token) => {
+  try {
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`; 
     const mailOptions = {
       from: `"Ikeyà Support" <${process.env.SMTP_USER}>`,
       to: email,
       subject: "Reset Your Ikeyà Password",
-      html: `
-        <div style="font-family: 'Georgia', serif; max-width: 600px; margin: auto; padding: 50px 20px;">
-          ${brandHeader}
-          <h1>Password Reset Request</h1>
-          <p>Click the link below to reset your password. This link expires in 1 hour.</p>
-          <a href="${resetLink}" style="background: #000; color: #fff; padding: 15px 25px; text-decoration: none; display: inline-block;">Reset Password</a>
-        </div>
-      `,
+      html: `<div style="font-family: serif; max-width: 600px; margin: auto; padding: 50px 20px;">
+        ${brandHeader}
+        <h1>Password Reset Request</h1>
+        <a href="${resetLink}">Reset Password</a>
+      </div>`,
     };
     await transporter.sendMail(mailOptions);
   } catch (error) {
