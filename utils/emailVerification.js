@@ -5,6 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL = "Ikeyà Support <onboarding@resend.dev>";
 const ADMIN_EMAIL = "ikeyaoriginals@gmail.com";
+console.log("ADMIN_EMAIL is:", ADMIN_EMAIL);
 
 
 const brandHeader = `
