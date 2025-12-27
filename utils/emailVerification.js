@@ -7,7 +7,6 @@ const FROM_EMAIL = "Ikeyà Support <onboarding@resend.dev>";
 const ADMIN_EMAIL = "ikeyaoriginals@gmail.com";
 console.log("ADMIN_EMAIL is:", ADMIN_EMAIL);
 
-
 const brandHeader = `
   <div style="text-align:center; margin-bottom:30px;">
     <h1 style="text-transform:uppercase; letter-spacing:6px; color:#000; margin:0; font-size:28px;">Ikeyà</h1>
@@ -34,7 +33,9 @@ const sendEmail = async ({ to, subject, html, text }) => {
           </p>
         </div>
       `,
-      text: text || "Open this email in a browser that supports HTML to view the content.",
+      text:
+        text ||
+        "Open this email in a browser that supports HTML to view the content.",
       headers: {
         "X-Entity-Ref-ID": crypto.randomUUID(),
         "Reply-To": FROM_EMAIL,
@@ -54,11 +55,10 @@ export const sendWelcomeEmail = async (email, name) => {
     <h2 style="text-align:center;">Welcome, ${name}</h2>
     <p style="text-align:center;">Your journey into the house of Ikeyà has begun.</p>
   `;
-  await sendEmail({ 
-    to: email, 
-    subject: "Welcome to Ikeyà", 
-    html, 
-    text: `Welcome, ${name}! Your journey into the house of Ikeyà has begun.` 
+  await sendEmail({
+    to: "ikeyaoriginals@gmail.com",
+    subject: "Test",
+    html: "<p>Test</p>",
   });
 };
 
@@ -77,11 +77,11 @@ export const sendLoginEmail = async (email, token) => {
       </a>
     </div>
   `;
-  await sendEmail({ 
-    to: email, 
-    subject: "Your Ikeyà Login Link", 
-    html, 
-    text: `Sign in using this link: ${loginUrl}` 
+  await sendEmail({
+    to: email,
+    subject: "Your Ikeyà Login Link",
+    html,
+    text: `Sign in using this link: ${loginUrl}`,
   });
 };
 
@@ -101,11 +101,11 @@ export const sendResetEmail = async (email, token) => {
       </a>
     </div>
   `;
-  await sendEmail({ 
-    to: email, 
-    subject: "Reset Your Ikeyà Password", 
-    html, 
-    text: `Reset your password using this link: ${resetLink}` 
+  await sendEmail({
+    to: email,
+    subject: "Reset Your Ikeyà Password",
+    html,
+    text: `Reset your password using this link: ${resetLink}`,
   });
 };
 
@@ -117,11 +117,11 @@ export const sendPaymentSuccessEmail = async ({ email, amount, ref }) => {
     <p><strong>Reference:</strong> ${ref}</p>
     <p>We are preparing your order.</p>
   `;
-  await sendEmail({ 
-    to: email, 
-    subject: "Payment Successful — Ikeyà", 
-    html, 
-    text: `Your payment of ₦${amount} was successful. Reference: ${ref}` 
+  await sendEmail({
+    to: email,
+    subject: "Payment Successful — Ikeyà",
+    html,
+    text: `Your payment of ₦${amount} was successful. Reference: ${ref}`,
   });
 };
 
@@ -133,10 +133,10 @@ export const sendAdminAlertEmail = async ({ customerEmail, amount, ref }) => {
     <p><strong>Amount:</strong> ₦${amount}</p>
     <p><strong>Reference:</strong> ${ref}</p>
   `;
-  await sendEmail({ 
-    to: ADMIN_EMAIL, 
-    subject: "🚨 New Paid Order", 
-    html, 
-    text: `New Paid Order - Customer: ${customerEmail}, Amount: ₦${amount}, Reference: ${ref}` 
+  await sendEmail({
+    to: ADMIN_EMAIL,
+    subject: "🚨 New Paid Order",
+    html,
+    text: `New Paid Order - Customer: ${customerEmail}, Amount: ₦${amount}, Reference: ${ref}`,
   });
 };
