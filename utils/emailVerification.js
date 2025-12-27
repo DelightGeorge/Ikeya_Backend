@@ -3,7 +3,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL = "Ikeyà Support <onboarding@resend.dev>";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "youremail@gmail.com";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "delightgeorge105@gmail.com";
 
 const brandHeader = `
   <div style="text-align:center; margin-bottom:30px;">
@@ -14,8 +14,7 @@ const brandHeader = `
   </div>
 `;
 
-// Core email sender
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, subject, html, text }) => {
   if (!process.env.RESEND_API_KEY) return;
 
   try {
@@ -32,8 +31,10 @@ const sendEmail = async ({ to, subject, html }) => {
           </p>
         </div>
       `,
+      text: text || "Open this email in a browser that supports HTML to view the content.",
       headers: {
         "X-Entity-Ref-ID": crypto.randomUUID(),
+        "Reply-To": FROM_EMAIL,
       },
     });
 
@@ -50,7 +51,7 @@ export const sendWelcomeEmail = async (email, name) => {
     <h2 style="text-align:center;">Welcome, ${name}</h2>
     <p style="text-align:center;">Your journey into the house of Ikeyà has begun.</p>
   `;
-  await sendEmail({ to: email, subject: "Welcome to Ikeyà", html });
+  await sendEmail({ to: email, subject: "Welcome to Ikeyà", html, text: `Welcome, ${name}! Your journey into the house of Ikeyà has begun.` });
 };
 
 // 2️⃣ Login email
@@ -64,7 +65,7 @@ export const sendLoginEmail = async (email, token) => {
       </a>
     </div>
   `;
-  await sendEmail({ to: email, subject: "Your Ikeyà Login Link", html });
+  await sendEmail({ to: email, subject: "Your Ikeyà Login Link", html, text: `Sign in using this link: ${loginUrl}` });
 };
 
 // 3️⃣ Password reset email
@@ -72,17 +73,17 @@ export const sendResetEmail = async (email, token) => {
   const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
   const html = `
     <h2 style="text-align:center;">Password Reset Request</h2>
-    <p style="text-align:center;">Click below to reset your password:</p>
+    <p style="text-align:center;">Click the button below to reset your password:</p>
     <div style="text-align:center; margin:20px 0;">
       <a href="${resetLink}" style="background:#92400e; color:#fff; padding:12px 30px; text-decoration:none; text-transform:uppercase; letter-spacing:2px;">
         Reset Password
       </a>
     </div>
   `;
-  await sendEmail({ to: email, subject: "Reset Your Ikeyà Password", html });
+  await sendEmail({ to: email, subject: "Reset Your Ikeyà Password", html, text: `Reset your password using this link: ${resetLink}` });
 };
 
-// 4️⃣ Customer payment success email
+// 4️⃣ Payment success email (for future Flutterwave integration)
 export const sendPaymentSuccessEmail = async ({ email, amount, ref }) => {
   const html = `
     <h2 style="text-align:center;">Payment Confirmed</h2>
@@ -90,7 +91,7 @@ export const sendPaymentSuccessEmail = async ({ email, amount, ref }) => {
     <p><strong>Reference:</strong> ${ref}</p>
     <p>We are preparing your order.</p>
   `;
-  await sendEmail({ to: email, subject: "Payment Successful — Ikeyà", html });
+  await sendEmail({ to: email, subject: "Payment Successful — Ikeyà", html, text: `Your payment of ₦${amount} was successful. Reference: ${ref}` });
 };
 
 // 5️⃣ Admin alert email
@@ -101,5 +102,5 @@ export const sendAdminAlertEmail = async ({ customerEmail, amount, ref }) => {
     <p><strong>Amount:</strong> ₦${amount}</p>
     <p><strong>Reference:</strong> ${ref}</p>
   `;
-  await sendEmail({ to: ADMIN_EMAIL, subject: "🚨 New Paid Order", html });
+  await sendEmail({ to: ADMIN_EMAIL, subject: "🚨 New Paid Order", html, text: `New Paid Order - Customer: ${customerEmail}, Amount: ₦${amount}, Reference: ${ref}` });
 };
