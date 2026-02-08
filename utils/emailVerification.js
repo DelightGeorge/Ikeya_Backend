@@ -3,9 +3,10 @@ import crypto from "crypto";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = "Ikeyà Support <onboarding@resend.dev>";
+// --- CONFIGURATION ---
+// IMPORTANT: This domain MUST be verified in the Resend dashboard first.
+const FROM_EMAIL = "Ikeyà <hello@ikeyaoriginnals.site>"; 
 const ADMIN_EMAIL = "ikeyaoriginals@gmail.com";
-console.log("ADMIN_EMAIL is:", ADMIN_EMAIL);
 
 const brandHeader = `
   <div style="text-align:center; margin-bottom:30px;">
@@ -17,7 +18,10 @@ const brandHeader = `
 `;
 
 const sendEmail = async ({ to, subject, html, text }) => {
-  if (!process.env.RESEND_API_KEY) return;
+  if (!process.env.RESEND_API_KEY) {
+    console.error("❌ Missing RESEND_API_KEY in environment variables.");
+    return;
+  }
 
   try {
     const response = await resend.emails.send({
@@ -33,41 +37,42 @@ const sendEmail = async ({ to, subject, html, text }) => {
           </p>
         </div>
       `,
-      text:
-        text ||
-        "Open this email in a browser that supports HTML to view the content.",
+      text: text || "Open this email in a browser that supports HTML to view the content.",
       headers: {
         "X-Entity-Ref-ID": crypto.randomUUID(),
-        "Reply-To": FROM_EMAIL,
+        // This ensures if a customer hits 'Reply', it goes to your Gmail, not the 'no-reply' domain
+        "Reply-To": ADMIN_EMAIL, 
       },
     });
 
+    if (response.error) {
+      console.error(`❌ Resend Error:`, response.error);
+      return;
+    }
+
     console.log(`✅ Email sent to ${to}`);
-    console.log("Full Resend response:", JSON.stringify(response, null, 2));
   } catch (error) {
     console.error(`❌ Failed to send email to ${to}:`, error);
   }
 };
 
-// 1️⃣ Welcome email
+// --- EMAIL TEMPLATES ---
+
 export const sendWelcomeEmail = async (email, name) => {
   const html = `
     <h2 style="text-align:center;">Welcome, ${name}</h2>
     <p style="text-align:center;">Your journey into the house of Ikeyà has begun.</p>
   `;
   await sendEmail({
-    to: "ikeyaoriginals@gmail.com",
-    subject: "Test",
-    html: "<p>Test</p>",
+    to: email, // Fixed: Sending to the actual user now, not the admin
+    subject: "Welcome to Ikeyà",
+    html,
   });
 };
 
-// 2️⃣ Login email
 export const sendLoginEmail = async (email, token) => {
   const encodedToken = encodeURIComponent(token);
   const loginUrl = `${process.env.FRONTEND_URL}/verify-login?token=${encodedToken}`;
-
-  console.log(`🔗 Login link for ${email}: ${loginUrl}`); // Debug log
 
   const html = `
     <h2 style="text-align:center;">Sign In Request</h2>
@@ -85,12 +90,9 @@ export const sendLoginEmail = async (email, token) => {
   });
 };
 
-// 3️⃣ Password reset email
 export const sendResetEmail = async (email, token) => {
   const encodedToken = encodeURIComponent(token);
   const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${encodedToken}`;
-
-  console.log(`🔗 Reset link for ${email}: ${resetLink}`); // Debug log
 
   const html = `
     <h2 style="text-align:center;">Password Reset Request</h2>
@@ -109,7 +111,6 @@ export const sendResetEmail = async (email, token) => {
   });
 };
 
-// 4️⃣ Payment success email
 export const sendPaymentSuccessEmail = async ({ email, amount, ref }) => {
   const html = `
     <h2 style="text-align:center;">Payment Confirmed</h2>
@@ -125,7 +126,6 @@ export const sendPaymentSuccessEmail = async ({ email, amount, ref }) => {
   });
 };
 
-// 5️⃣ Admin alert email
 export const sendAdminAlertEmail = async ({ customerEmail, amount, ref }) => {
   const html = `
     <h3 style="text-align:center;">New Paid Order</h3>
