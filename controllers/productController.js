@@ -51,51 +51,47 @@ export const getProducts = async (req, res) => {
 // Admin: Add a product
 export const addProduct = async (req, res) => {
   try {
-    const { name, description, price, category } = req.body;
+    const { name, description, price, category, type } = req.body;
 
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Admins only" });
     }
 
     if (!req.file) {
-      return res.status(400).json({ message: "No image file provided" });
+      return res.status(400).json({ message: "Image required" });
     }
 
-    // 1. Manually find the category by name
     let categoryRecord = await prisma.category.findFirst({
       where: { name: category },
     });
 
-    // 2. If it doesn't exist, create it WITH the required type
     if (!categoryRecord) {
       categoryRecord = await prisma.category.create({
         data: {
           name: category,
-          type: category, // Providing the 'type' that Prisma is asking for
+          type: type,
         },
       });
     }
 
-    // 3. Now create the product
-    const newProduct = await prisma.product.create({
+    const product = await prisma.product.create({
       data: {
         name,
         description,
         price: Math.round(Number(price) * 100),
         imageUrl: req.file.path,
-        type: category,
-        category: {
-          connect: { id: categoryRecord.id },
-        },
+        type,
+        categoryId: categoryRecord.id,
       },
     });
 
-    res.status(201).json(newProduct);
-  } catch (error) {
-    console.error("Add Product Error:", error);
-    res.status(500).json({ message: error.message });
+    res.status(201).json(product);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
   }
 };
+
 
 // Add this to your productController.js
 export const getRecentProducts = async (req, res) => {
