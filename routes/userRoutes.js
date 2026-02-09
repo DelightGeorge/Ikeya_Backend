@@ -8,7 +8,7 @@ import {
   getAllUsers, // <-- ADD THIS
   getUserById, // <-- ADD THIS
   deleteUser,
-} from "../controllers/authController.js";
+} from "../controllers/userController.js";
 import authMiddleware from "../middlewares/auth.js";
 
 const router = express.Router();
