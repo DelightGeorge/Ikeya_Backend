@@ -15,7 +15,6 @@ export const registerUser = async (req, res) => {
   try {
     const { name, email, password, confirmPassword } = req.body;
 
-    // 1. Validate Password Match
     if (password !== confirmPassword) {
       return res.status(400).json({ message: "Passwords do not match." });
     }
@@ -78,12 +77,10 @@ export const forgotPassword = async (req, res) => {
     const { email } = req.body;
     const user = await prisma.user.findUnique({ where: { email } });
 
-    // Security: Don't reveal if user exists or not
     if (!user) {
       return res.json({ message: "If an account exists with that email, a reset link has been sent." });
     }
 
-    // Generate a token (ensure your generateToken uses a secret that expires)
     const resetToken = generateToken(user); 
 
     try {
@@ -98,18 +95,16 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-// --- RESET PASSWORD (The actual update) ---
+// --- RESET PASSWORD ---
 export const resetPassword = async (req, res) => {
   try {
     const { password, confirmPassword } = req.body;
-    const { token } = req.query; // Usually passed as ?token=XYZ
+    const { token } = req.query;
 
     if (password !== confirmPassword) {
       return res.status(400).json({ message: "Passwords do not match." });
     }
 
-    // 1. Verify token & get user (using your specific middleware/jwt logic)
-    // For now, assuming you've decoded the token to get the userId
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -129,7 +124,7 @@ export const resetPassword = async (req, res) => {
 export const getProfile = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ 
-      where: { id: req.user.userid } 
+      where: { id: req.user.id }
     });
     
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -141,16 +136,13 @@ export const getProfile = async (req, res) => {
   }
 };
 
-// ========== ADMIN USER MANAGEMENT FUNCTIONS ==========
-
-// --- GET ALL USERS (Admin Only) ---
-// ========== ADD THESE FUNCTIONS TO YOUR EXISTING authController.js ==========
-// (Add them at the bottom of your file, before the export statement)
+// ========== ADMIN USER MANAGEMENT ==========
 
 // --- GET ALL USERS (Admin Only) ---
 export const getAllUsers = async (req, res) => {
   try {
-    // Check if user is admin
+    console.log("getAllUsers - req.user:", req.user);
+    
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Admin access required" });
     }
@@ -168,6 +160,7 @@ export const getAllUsers = async (req, res) => {
       },
     });
 
+    console.log(`Found ${users.length} users`);
     res.status(200).json(users);
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -215,7 +208,6 @@ export const deleteUser = async (req, res) => {
 
     const { id } = req.params;
 
-    // Prevent admin from deleting themselves
     if (id === req.user.id) {
       return res.status(400).json({ message: "Cannot delete your own account" });
     }

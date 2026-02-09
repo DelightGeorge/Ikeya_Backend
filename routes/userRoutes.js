@@ -5,24 +5,24 @@ import {
   forgotPassword,
   resetPassword,
   getProfile,
-  getAllUsers, // <-- ADD THIS
-  getUserById, // <-- ADD THIS
+  getAllUsers,
+  getUserById,
   deleteUser,
 } from "../controllers/userController.js";
 import authMiddleware from "../middlewares/auth.js";
 
 const router = express.Router();
 
-// ========== PUBLIC ROUTES (No Auth Required) ==========
+// ========== PUBLIC ROUTES ==========
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 
-// ========== PROTECTED ROUTES (Auth Required) ==========
+// ========== PROTECTED ROUTES ==========
 router.get("/profile", authMiddleware, getProfile);
 
-// ========== ADMIN ROUTES (Auth + Admin Role Required) ==========
+// ========== ADMIN ROUTES ==========
 router.get("/users", authMiddleware, getAllUsers);
 router.get("/users/:id", authMiddleware, getUserById);
 router.delete("/users/:id", authMiddleware, deleteUser);

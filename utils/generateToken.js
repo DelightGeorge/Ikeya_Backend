@@ -2,10 +2,13 @@
 import jwt from "jsonwebtoken";
 
 export const generateToken = (user) => {
-  const payload = {
-    userid: user.id,
-    email: user.email,
-    role: user.role,
-  };
-  return jwt.sign(payload, process.env.JWT_SECRET_KEY, { expiresIn: "2h" });
+  return jwt.sign(
+    { 
+      id: user.id, 
+      email: user.email,
+      role: user.role  // ✅ CRITICAL: Include role in token
+    },
+    process.env.JWT_SECRET_KEY,
+    { expiresIn: "7d" }
+  );
 };
