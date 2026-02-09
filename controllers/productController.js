@@ -6,7 +6,7 @@ import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 export const getProductsByType = async (req, res) => {
   try {
     const { type } = req.params; // expects "FASHION" or "BEAUTY"
-    
+
     const products = await prisma.product.findMany({
       where: { type },
       include: { category: true },
@@ -48,11 +48,14 @@ export const getProducts = async (req, res) => {
   }
 };
 
-
 // Admin: Add a product
 export const addProduct = async (req, res) => {
   try {
     const { name, description, price, category } = req.body;
+
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ message: "Admins only" });
+    }
 
     if (!req.file) {
       return res.status(400).json({ message: "No image file provided" });
@@ -60,16 +63,16 @@ export const addProduct = async (req, res) => {
 
     // 1. Manually find the category by name
     let categoryRecord = await prisma.category.findFirst({
-      where: { name: category }
+      where: { name: category },
     });
 
     // 2. If it doesn't exist, create it WITH the required type
     if (!categoryRecord) {
       categoryRecord = await prisma.category.create({
-        data: { 
+        data: {
           name: category,
-          type: category // Providing the 'type' that Prisma is asking for
-        }
+          type: category, // Providing the 'type' that Prisma is asking for
+        },
       });
     }
 
@@ -78,13 +81,13 @@ export const addProduct = async (req, res) => {
       data: {
         name,
         description,
-        price: parseFloat(price),
+        price: Math.round(Number(price) * 100),
         imageUrl: req.file.path,
-        type: category, 
+        type: category,
         category: {
-          connect: { id: categoryRecord.id }
-        }
-      }
+          connect: { id: categoryRecord.id },
+        },
+      },
     });
 
     res.status(201).json(newProduct);
@@ -94,27 +97,26 @@ export const addProduct = async (req, res) => {
   }
 };
 
-
 // Add this to your productController.js
 export const getRecentProducts = async (req, res) => {
   try {
     const recentProducts = await prisma.product.findMany({
       take: 5, // Get the latest 5 products
       orderBy: {
-        createdAt: 'desc' // Uses the creatAt field from your schema 
+        createdAt: "desc", // Uses the creatAt field from your schema
       },
       include: {
-        category: true // Include category details if needed 
-      }
+        category: true, // Include category details if needed
+      },
     });
 
     res.status(200).json({
       success: true,
-      data: recentProducts
+      data: recentProducts,
     });
   } catch (error) {
-    console.error('Error fetching recent products:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    console.error("Error fetching recent products:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
