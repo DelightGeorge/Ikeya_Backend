@@ -5,8 +5,8 @@ import {
   forgotPassword,
   resetPassword,
   getProfile,
-  getAllUsers,
-  getUserById,
+  getAllUsers, // <-- ADD THIS
+  getUserById, // <-- ADD THIS
   deleteUser,
 } from "../controllers/authController.js";
 import authMiddleware from "../middlewares/auth.js";

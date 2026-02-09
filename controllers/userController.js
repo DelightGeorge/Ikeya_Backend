@@ -144,6 +144,10 @@ export const getProfile = async (req, res) => {
 // ========== ADMIN USER MANAGEMENT FUNCTIONS ==========
 
 // --- GET ALL USERS (Admin Only) ---
+// ========== ADD THESE FUNCTIONS TO YOUR EXISTING authController.js ==========
+// (Add them at the bottom of your file, before the export statement)
+
+// --- GET ALL USERS (Admin Only) ---
 export const getAllUsers = async (req, res) => {
   try {
     // Check if user is admin
@@ -212,7 +216,7 @@ export const deleteUser = async (req, res) => {
     const { id } = req.params;
 
     // Prevent admin from deleting themselves
-    if (id === req.user.userid) {
+    if (id === req.user.id) {
       return res.status(400).json({ message: "Cannot delete your own account" });
     }
 
