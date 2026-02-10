@@ -51,14 +51,19 @@ export const getProducts = async (req, res) => {
 // Admin: Add a product
 export const addProduct = async (req, res) => {
   try {
-    const { name, description, price, category, type } = req.body;
-
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Admins only" });
     }
 
+    const { name, description, price, category, type } = req.body;
+
     if (!req.file) {
       return res.status(400).json({ message: "Image required" });
+    }
+
+    const parsedPrice = Number(price);
+    if (isNaN(parsedPrice)) {
+      return res.status(400).json({ message: "Invalid price" });
     }
 
     let categoryRecord = await prisma.category.findFirst({
@@ -67,24 +72,15 @@ export const addProduct = async (req, res) => {
 
     if (!categoryRecord) {
       categoryRecord = await prisma.category.create({
-        data: {
-          name: category,
-          type: type,
-        },
+        data: { name: category, type },
       });
-    }
-
-    // 🔹 validate price
-    const parsedPrice = Number(price);
-    if (isNaN(parsedPrice)) {
-      return res.status(400).json({ message: "Invalid price" });
     }
 
     const product = await prisma.product.create({
       data: {
         name,
         description,
-        price: parsedPrice, // ✅ store price as-is (₦)
+        price: parsedPrice,
         imageUrl: req.file.path,
         type,
         categoryId: categoryRecord.id,
@@ -93,10 +89,11 @@ export const addProduct = async (req, res) => {
 
     res.status(201).json(product);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    console.error("Add product error:", err);
+    res.status(500).json({ message: "Failed to add product" });
   }
 };
+
 
 // Add this to your productController.js
 export const getRecentProducts = async (req, res) => {

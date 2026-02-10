@@ -17,7 +17,14 @@ router.get("/recentProducts", getRecentProducts);
 router.get("/type/:type", getProductsByType);
 router.get("/:id", getProductById);
 
-router.post("/add", authMiddleware, upload.single("image"), addProduct);
+// 🔥 FIXED ORDER (multer FIRST, auth SECOND)
+router.post(
+  "/add",
+  upload.single("image"),
+  authMiddleware,
+  addProduct
+);
+
 router.delete("/:id", authMiddleware, deleteProduct);
 
 export default router;
