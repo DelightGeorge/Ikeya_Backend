@@ -74,11 +74,17 @@ export const addProduct = async (req, res) => {
       });
     }
 
+    // 🔹 validate price
+    const parsedPrice = Number(price);
+    if (isNaN(parsedPrice)) {
+      return res.status(400).json({ message: "Invalid price" });
+    }
+
     const product = await prisma.product.create({
       data: {
         name,
         description,
-        price: Math.round(Number(price) * 100),
+        price: parsedPrice, // ✅ store price as-is (₦)
         imageUrl: req.file.path,
         type,
         categoryId: categoryRecord.id,
@@ -91,7 +97,6 @@ export const addProduct = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 // Add this to your productController.js
 export const getRecentProducts = async (req, res) => {
@@ -118,10 +123,22 @@ export const getRecentProducts = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   try {
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ message: "Admins only" });
+    }
+
     const { id } = req.params;
 
+    const existingProduct = await prisma.product.findUnique({
+      where: { id },
+    });
+
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
     await prisma.product.delete({
-      where: { id: id },
+      where: { id },
     });
 
     res.status(200).json({ message: "Product deleted successfully" });
