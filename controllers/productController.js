@@ -51,37 +51,45 @@ export const getProducts = async (req, res) => {
 // Admin: Add a product
 export const addProduct = async (req, res) => {
   try {
+    const { name, description, price, category, type } = req.body;
+
+    // Only admins
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Admins only" });
     }
 
-    const { name, description, price, category, type } = req.body;
-
+    // Image check
     if (!req.file) {
       return res.status(400).json({ message: "Image required" });
     }
 
+    // ✅ Parse price and validate
     const parsedPrice = Number(price);
     if (isNaN(parsedPrice)) {
       return res.status(400).json({ message: "Invalid price" });
     }
 
+    // Check or create category
     let categoryRecord = await prisma.category.findFirst({
       where: { name: category },
     });
 
     if (!categoryRecord) {
       categoryRecord = await prisma.category.create({
-        data: { name: category, type },
+        data: {
+          name: category,
+          type: type,
+        },
       });
     }
 
+    // Create product
     const product = await prisma.product.create({
       data: {
         name,
         description,
-        price: parsedPrice,
-        imageUrl: req.file.path,
+        price: Math.round(parsedPrice * 100), // store in kobo if NGN
+        imageUrl: req.file.path, // multer/cloudinary path
         type,
         categoryId: categoryRecord.id,
       },
@@ -89,10 +97,11 @@ export const addProduct = async (req, res) => {
 
     res.status(201).json(product);
   } catch (err) {
-    console.error("Add product error:", err);
-    res.status(500).json({ message: "Failed to add product" });
+    console.error("Add Product Error:", err);
+    res.status(500).json({ message: err.message });
   }
 };
+
 
 
 // Add this to your productController.js
