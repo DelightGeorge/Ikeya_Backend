@@ -1,13 +1,25 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
+// Helper function to get user ID from JWT (handles different field names)
+const getUserId = (user) => {
+  // Try different possible field names
+  return user?.userid || user?.userId || user?.id || user?.sub;
+};
+
 // GET USER CART
 export const getCart = async (req, res) => {
   try {
-    console.log("📦 [GET CART] User ID:", req.user?.userid);
+    const userId = getUserId(req.user);
     
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    console.log("📦 [GET CART] User ID:", userId);
+
     const cart = await prisma.cart.findUnique({
-      where: { userId: req.user.userid },
+      where: { userId: userId },
       include: { 
         items: { include: { product: true } } 
       },
@@ -21,7 +33,7 @@ export const getCart = async (req, res) => {
     console.log("📦 [GET CART] Found", cart.items.length, "items");
     res.json(cart.items); 
   } catch (err) {
-    console.error("❌ [GET CART ERROR]:", err);
+    console.error("❌ [GET CART ERROR]:", err.message);
     res.status(500).json({ message: err.message });
   }
 };
@@ -29,35 +41,44 @@ export const getCart = async (req, res) => {
 // ADD ITEM TO CART
 export const addToCart = async (req, res) => {
   try {
-    console.log("🛒 [ADD TO CART] Starting...");
-    console.log("🛒 [ADD TO CART] req.body:", req.body);
-    console.log("🛒 [ADD TO CART] req.user:", req.user);
+    const userId = getUserId(req.user);
     
+    if (!userId) {
+      console.error("❌ [ADD TO CART] No user ID found in token");
+      console.error("req.user contents:", req.user);
+      return res.status(401).json({ 
+        message: "User not authenticated",
+        debug: "No user ID found in JWT token"
+      });
+    }
+
+    console.log("🛒 [ADD TO CART] User ID:", userId);
+    console.log("🛒 [ADD TO CART] Request:", req.body);
+
     const { productId, quantity } = req.body;
 
-    // Log what we received
-    console.log("🛒 [ADD TO CART] Parsed - productId:", productId, "quantity:", quantity);
-
     // Find or create cart
-    console.log("🛒 [ADD TO CART] Looking for cart with userId:", req.user.userid);
-    let cart = await prisma.cart.findUnique({ where: { userId: req.user.userid } });
+    let cart = await prisma.cart.findUnique({ 
+      where: { userId: userId } 
+    });
     
     if (!cart) {
-      console.log("🛒 [ADD TO CART] No cart found, creating new cart...");
-      cart = await prisma.cart.create({ data: { userId: req.user.userid } });
-      console.log("🛒 [ADD TO CART] Cart created with ID:", cart.id);
+      console.log("🛒 [ADD TO CART] Creating new cart...");
+      cart = await prisma.cart.create({ 
+        data: { userId: userId } 
+      });
+      console.log("🛒 [ADD TO CART] Cart created:", cart.id);
     } else {
-      console.log("🛒 [ADD TO CART] Cart found with ID:", cart.id);
+      console.log("🛒 [ADD TO CART] Cart found:", cart.id);
     }
 
     // Check for existing item
-    console.log("🛒 [ADD TO CART] Checking for existing cart item...");
     const existingItem = await prisma.cartItem.findFirst({
       where: { cartId: cart.id, productId },
     });
 
     if (existingItem) {
-      console.log("🛒 [ADD TO CART] Item exists, updating quantity...");
+      console.log("🛒 [ADD TO CART] Updating existing item");
       const updated = await prisma.cartItem.update({
         where: { id: existingItem.id },
         data: { quantity: existingItem.quantity + quantity },
@@ -68,28 +89,21 @@ export const addToCart = async (req, res) => {
     }
 
     // Create new item
-    console.log("🛒 [ADD TO CART] Creating new cart item...");
-    console.log("🛒 [ADD TO CART] Data:", { cartId: cart.id, productId, quantity });
-    
+    console.log("🛒 [ADD TO CART] Creating new cart item");
     const item = await prisma.cartItem.create({
       data: { cartId: cart.id, productId, quantity },
       include: { product: true },
     });
 
-    console.log("✅ [ADD TO CART] Created successfully:", item);
+    console.log("✅ [ADD TO CART] Created successfully");
     res.status(201).json(item);
     
   } catch (err) {
-    console.error("❌ [ADD TO CART ERROR]:");
-    console.error("Error message:", err.message);
-    console.error("Error name:", err.name);
+    console.error("❌ [ADD TO CART ERROR]:", err.message);
     console.error("Full error:", err);
-    console.error("Stack trace:", err.stack);
-    
     res.status(500).json({ 
       message: err.message,
-      name: err.name,
-      details: String(err)
+      error: "Failed to add item to cart"
     });
   }
 };
@@ -100,7 +114,7 @@ export const updateCartItem = async (req, res) => {
     const { id } = req.params;
     const { quantity } = req.body;
 
-    console.log("📝 [UPDATE CART] Item ID:", id, "New quantity:", quantity);
+    console.log("📝 [UPDATE CART] Item ID:", id, "Quantity:", quantity);
 
     const updatedItem = await prisma.cartItem.update({
       where: { id },
@@ -111,7 +125,7 @@ export const updateCartItem = async (req, res) => {
     console.log("✅ [UPDATE CART] Updated successfully");
     res.json(updatedItem);
   } catch (err) {
-    console.error("❌ [UPDATE CART ERROR]:", err);
+    console.error("❌ [UPDATE CART ERROR]:", err.message);
     res.status(500).json({ message: err.message });
   }
 };
@@ -128,7 +142,7 @@ export const removeCartItem = async (req, res) => {
     console.log("✅ [REMOVE CART] Removed successfully");
     res.json({ message: "Item removed from cart" });
   } catch (err) {
-    console.error("❌ [REMOVE CART ERROR]:", err);
+    console.error("❌ [REMOVE CART ERROR]:", err.message);
     res.status(500).json({ message: err.message });
   }
 };
