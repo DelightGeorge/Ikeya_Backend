@@ -199,6 +199,56 @@ export const getUserById = async (req, res) => {
   }
 };
 
+// --- UPDATE USER ROLE (Admin Only) ---
+export const updateUserRole = async (req, res) => {
+  try {
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { id } = req.params;
+    const { role } = req.body;
+
+    // Validate role
+    if (!["CUSTOMER", "ADMIN"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role. Must be CUSTOMER or ADMIN" });
+    }
+
+    // Prevent admin from changing their own role
+    if (id === req.user.id) {
+      return res.status(400).json({ message: "Cannot change your own role" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: { role },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    res.status(200).json({
+      message: `User role updated to ${role} successfully`,
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating user role:", error);
+    res.status(500).json({ message: "Failed to update user role" });
+  }
+};
+
 // --- DELETE USER (Admin Only) ---
 export const deleteUser = async (req, res) => {
   try {
@@ -212,6 +262,25 @@ export const deleteUser = async (req, res) => {
       return res.status(400).json({ message: "Cannot delete your own account" });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Delete user's cart items first
+    await prisma.cartItem.deleteMany({
+      where: { userId: id },
+    });
+
+    // Delete user's orders
+    await prisma.order.deleteMany({
+      where: { userId: id },
+    });
+
+    // Delete the user
     await prisma.user.delete({
       where: { id },
     });

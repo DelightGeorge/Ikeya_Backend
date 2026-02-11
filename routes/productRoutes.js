@@ -12,12 +12,13 @@ import { upload } from "../config/cloudinary.js";
 
 const router = express.Router();
 
-router.get("/", getProducts);
+// GET routes - search will work via query params
+router.get("/", getProducts); // This now handles ?search=query
 router.get("/recentProducts", getRecentProducts);
 router.get("/type/:type", getProductsByType);
 router.get("/:id", getProductById);
 
-// 🔥 FIXED ORDER (multer FIRST, auth SECOND)
+// POST routes
 router.post(
   "/add",
   upload.single("image"),
@@ -25,6 +26,7 @@ router.post(
   addProduct
 );
 
+// DELETE routes
 router.delete("/:id", authMiddleware, deleteProduct);
 
 export default router;

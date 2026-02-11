@@ -35,15 +35,35 @@ export const getProductById = async (req, res) => {
   }
 };
 
-// Get all products
+// Get all products with optional search
 export const getProducts = async (req, res) => {
   try {
+    const { search } = req.query;
+
+    // Build filter conditions
+    const whereCondition = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { description: { contains: search, mode: "insensitive" } },
+            {
+              category: {
+                name: { contains: search, mode: "insensitive" },
+              },
+            },
+          ],
+        }
+      : {};
+
     const products = await prisma.product.findMany({
+      where: whereCondition,
       include: { category: true },
+      orderBy: { createdAt: "desc" },
     });
+
     res.json(products);
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching products:", error);
     res.status(500).json({ message: "Failed to fetch products" });
   }
 };
@@ -102,18 +122,16 @@ export const addProduct = async (req, res) => {
   }
 };
 
-
-
-// Add this to your productController.js
+// Get recent products
 export const getRecentProducts = async (req, res) => {
   try {
     const recentProducts = await prisma.product.findMany({
       take: 5, // Get the latest 5 products
       orderBy: {
-        createdAt: "desc", // Uses the creatAt field from your schema
+        createdAt: "desc",
       },
       include: {
-        category: true, // Include category details if needed
+        category: true,
       },
     });
 
@@ -127,6 +145,7 @@ export const getRecentProducts = async (req, res) => {
   }
 };
 
+// Delete product
 export const deleteProduct = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -159,4 +178,3 @@ export const deleteProduct = async (req, res) => {
     res.status(500).json({ message: "Failed to delete product" });
   }
 };
-
