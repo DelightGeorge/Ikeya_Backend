@@ -307,3 +307,92 @@ export const sendAdminOrderAlertEmail = async ({ order, customerName, customerEm
 
 export const sendPaymentSuccessEmail = sendOrderReceiptEmail;
 export const sendAdminAlertEmail = sendAdminOrderAlertEmail;
+
+// ─── Newsletter Subscriber Welcome → Subscriber ──────────────────────────────
+
+export const sendNewsletterWelcomeEmail = async (email) => {
+  const html = `
+    <div style="text-align:center; margin-bottom:32px;">
+      <p style="text-transform:uppercase; font-size:9px; letter-spacing:3px; color:#92400e; margin-bottom:8px;">
+        The Style Club
+      </p>
+      <h2 style="font-size:24px; letter-spacing:4px; text-transform:uppercase; color:#000; margin:0;">
+        Welcome to the Club
+      </h2>
+    </div>
+
+    <p style="font-size:14px; color:#333; line-height:1.9; text-align:center; max-width:420px; margin:0 auto 32px;">
+      You're now part of something rare. Expect early access to seasonal drops,
+      exclusive style edits, and professional hair care tips — straight to your inbox.
+    </p>
+
+    ${divider}
+
+    <div style="text-align:center; margin:32px 0;">
+      <a href="${process.env.FRONTEND_URL}/shop"
+         style="background:#000; color:#fff; padding:14px 40px; text-decoration:none;
+                text-transform:uppercase; letter-spacing:4px; font-size:10px;">
+        Explore the Collection
+      </a>
+    </div>
+
+    <p style="font-size:11px; color:#bbb; text-align:center; margin-top:24px;">
+      You subscribed with <strong>${email}</strong>.
+      If this wasn't you, you can safely ignore this email.
+    </p>
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: "Welcome to The Style Club — Ikeyà Originals",
+    html,
+    text: `Welcome to the Ikeyà Style Club! You'll now receive early access to drops and hair care tips. Visit us at ${process.env.FRONTEND_URL}/shop`,
+  });
+};
+
+// ─── Newsletter Subscriber Alert → Admin ────────────────────────────────────
+
+export const sendAdminNewsletterAlertEmail = async (subscriberEmail) => {
+  const html = `
+    <div style="background:#111; border:1px solid #333; padding:28px; margin-bottom:24px;">
+      <p style="text-transform:uppercase; font-size:9px; letter-spacing:3px; color:#f59e0b; margin:0 0 8px;">
+        New Subscriber
+      </p>
+      <h2 style="margin:0; font-size:20px; color:#fff; letter-spacing:2px;">Style Club</h2>
+    </div>
+
+    <table style="width:100%; border-collapse:collapse;">
+      <tr>
+        <td style="font-size:10px; text-transform:uppercase; letter-spacing:2px; color:#888; padding:10px 0;">
+          Subscriber Email
+        </td>
+        <td style="font-size:13px; color:#333; padding:10px 0; text-align:right; font-weight:bold;">
+          ${subscriberEmail}
+        </td>
+      </tr>
+      <tr>
+        <td style="font-size:10px; text-transform:uppercase; letter-spacing:2px; color:#888; padding:10px 0;">
+          Date
+        </td>
+        <td style="font-size:13px; color:#333; padding:10px 0; text-align:right;">
+          ${new Date().toLocaleDateString("en-NG", { day: "2-digit", month: "long", year: "numeric" })}
+        </td>
+      </tr>
+    </table>
+
+    <div style="text-align:center; margin-top:28px;">
+      <a href="${process.env.FRONTEND_URL}/admin"
+         style="background:#92400e; color:#fff; padding:12px 32px; text-decoration:none;
+                text-transform:uppercase; letter-spacing:3px; font-size:10px;">
+        View Dashboard
+      </a>
+    </div>
+  `;
+
+  await sendEmail({
+    to: ADMIN_EMAIL,
+    subject: `New Subscriber — ${subscriberEmail} | Ikeyà`,
+    html,
+    text: `New newsletter subscriber: ${subscriberEmail}`,
+  });
+};
