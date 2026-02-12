@@ -4,10 +4,11 @@ const prisma = new PrismaClient();
 // CREATE ORDER
 export const createOrder = async (req, res) => {
   try {
-    const { address, phone } = req.body;
+    const { address, phone, paystackReference } = req.body;
+    const userId = req.user.id; // ✅ FIXED: was req.user.userid (lowercase 'd')
 
     const cart = await prisma.cart.findUnique({
-      where: { userId: req.user.userid },
+      where: { userId },
       include: { items: { include: { product: true } } },
     });
 
@@ -15,17 +16,20 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Cart is empty" });
     }
 
-    const totalAmount = cart.items.reduce(
+    const deliveryFee = 250000; // ₦2,500 in kobo
+    const subtotal = cart.items.reduce(
       (sum, item) => sum + item.product.price * item.quantity,
       0
     );
+    const totalAmount = subtotal + deliveryFee;
 
     const order = await prisma.order.create({
       data: {
-        userId: req.user.userid,
+        userId,                                       // ✅ FIXED
         totalAmount,
         address,
         phone,
+        paystackReference: paystackReference || null, // ✅ store payment ref
         items: {
           create: cart.items.map((item) => ({
             productId: item.productId,
@@ -37,11 +41,12 @@ export const createOrder = async (req, res) => {
       include: { items: true },
     });
 
-    // Empty the cart
+    // Empty the cart after order is created
     await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
 
     res.status(201).json(order);
   } catch (err) {
+    console.error("createOrder error:", err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -49,8 +54,10 @@ export const createOrder = async (req, res) => {
 // GET USER ORDERS
 export const getOrders = async (req, res) => {
   try {
+    const userId = req.user.id; // ✅ FIXED: was req.user.userid
+
     const orders = await prisma.order.findMany({
-      where: { userId: req.user.userid },
+      where: { userId },
       include: { items: { include: { product: true } } },
       orderBy: { createdAt: "desc" },
     });
