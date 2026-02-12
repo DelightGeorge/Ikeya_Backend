@@ -1,11 +1,16 @@
 import { PrismaClient } from "@prisma/client";
+import {
+  sendOrderReceiptEmail,
+  sendAdminOrderAlertEmail,
+} from "../utils/emailVerification.js";
+
 const prisma = new PrismaClient();
 
 // CREATE ORDER
 export const createOrder = async (req, res) => {
   try {
     const { address, phone, paystackReference } = req.body;
-    const userId = req.user.id; // ✅ FIXED: was req.user.userid
+    const userId = req.user.id;
 
     const cart = await prisma.cart.findUnique({
       where: { userId },
@@ -38,10 +43,29 @@ export const createOrder = async (req, res) => {
           })),
         },
       },
-      include: { items: true },
+      // ✅ Include user so we have name + email for the emails
+      include: {
+        items: { include: { product: true } },
+        user: { select: { name: true, email: true } },
+      },
     });
 
+    // ✅ Clear the cart
     await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+    // ✅ Send receipt to customer (non-blocking — don't await so it doesn't slow the response)
+    sendOrderReceiptEmail({
+      email: order.user.email,
+      name: order.user.name,
+      order,
+    }).catch((err) => console.error("Receipt email failed:", err));
+
+    // ✅ Send alert to admin (non-blocking)
+    sendAdminOrderAlertEmail({
+      order,
+      customerName: order.user.name,
+      customerEmail: order.user.email,
+    }).catch((err) => console.error("Admin alert email failed:", err));
 
     res.status(201).json(order);
   } catch (err) {
@@ -53,14 +77,11 @@ export const createOrder = async (req, res) => {
 // GET USER ORDERS
 export const getOrders = async (req, res) => {
   try {
-    const userId = req.user.id; // ✅ FIXED: was req.user.userid
-
     const orders = await prisma.order.findMany({
-      where: { userId },
+      where: { userId: req.user.id },
       include: { items: { include: { product: true } } },
       orderBy: { createdAt: "desc" },
     });
-
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -70,28 +91,23 @@ export const getOrders = async (req, res) => {
 // GET SINGLE ORDER
 export const getOrderById = async (req, res) => {
   try {
-    const { id } = req.params;
-
     const order = await prisma.order.findUnique({
-      where: { id },
+      where: { id: req.params.id },
       include: { items: { include: { product: true } } },
     });
-
     if (!order) return res.status(404).json({ message: "Order not found" });
-
     res.json(order);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// ✅ GET ALL ORDERS (Admin only)
+// GET ALL ORDERS — Admin only
 export const getAllOrders = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Admin access required" });
     }
-
     const orders = await prisma.order.findMany({
       include: {
         user: { select: { id: true, name: true, email: true } },
@@ -99,7 +115,6 @@ export const getAllOrders = async (req, res) => {
       },
       orderBy: { createdAt: "desc" },
     });
-
     res.json(orders);
   } catch (err) {
     console.error("getAllOrders error:", err);
@@ -107,13 +122,12 @@ export const getAllOrders = async (req, res) => {
   }
 };
 
-// ✅ UPDATE ORDER STATUS (Admin only)
+// UPDATE ORDER STATUS — Admin only
 export const updateOrderStatus = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Admin access required" });
     }
-
     const { id } = req.params;
     const { status } = req.body;
 
@@ -130,7 +144,6 @@ export const updateOrderStatus = async (req, res) => {
         items: { include: { product: true } },
       },
     });
-
     res.json(order);
   } catch (err) {
     console.error("updateOrderStatus error:", err);
