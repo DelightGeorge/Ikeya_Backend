@@ -1,19 +1,25 @@
 import express from "express";
-import { createOrder, getOrders, getOrderById } from "../controllers/orderController.js";
+import {
+  createOrder,
+  getOrders,
+  getOrderById,
+  getAllOrders,       // ✅ new
+  updateOrderStatus, // ✅ new
+} from "../controllers/orderController.js";
 import authMiddleware from "../middlewares/auth.js";
 
 const router = express.Router();
 
-// All routes protected
+// All routes require auth
 router.use(authMiddleware);
 
-// Create a new order
+// Customer routes
 router.post("/", createOrder);
-
-// Get all orders for the logged-in user
 router.get("/", getOrders);
-
-// Get a single order by ID
 router.get("/:id", getOrderById);
+
+// Admin routes
+router.get("/all", getAllOrders);             // ✅ GET /orders/all
+router.patch("/:id/status", updateOrderStatus); // ✅ PATCH /orders/:id/status
 
 export default router;

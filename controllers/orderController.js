@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 export const createOrder = async (req, res) => {
   try {
     const { address, phone, paystackReference } = req.body;
-    const userId = req.user.id; // ✅ FIXED: was req.user.userid (lowercase 'd')
+    const userId = req.user.id; // ✅ FIXED: was req.user.userid
 
     const cart = await prisma.cart.findUnique({
       where: { userId },
@@ -16,7 +16,7 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Cart is empty" });
     }
 
-    const deliveryFee = 250000; // ₦2,500 in kobo
+    const deliveryFee = 250000;
     const subtotal = cart.items.reduce(
       (sum, item) => sum + item.product.price * item.quantity,
       0
@@ -25,11 +25,11 @@ export const createOrder = async (req, res) => {
 
     const order = await prisma.order.create({
       data: {
-        userId,                                       // ✅ FIXED
+        userId,
         totalAmount,
         address,
         phone,
-        paystackReference: paystackReference || null, // ✅ store payment ref
+        paystackReference: paystackReference || null,
         items: {
           create: cart.items.map((item) => ({
             productId: item.productId,
@@ -41,7 +41,6 @@ export const createOrder = async (req, res) => {
       include: { items: true },
     });
 
-    // Empty the cart after order is created
     await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
 
     res.status(201).json(order);
@@ -82,6 +81,59 @@ export const getOrderById = async (req, res) => {
 
     res.json(order);
   } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ✅ GET ALL ORDERS (Admin only)
+export const getAllOrders = async (req, res) => {
+  try {
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const orders = await prisma.order.findMany({
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        items: { include: { product: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(orders);
+  } catch (err) {
+    console.error("getAllOrders error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ✅ UPDATE ORDER STATUS (Admin only)
+export const updateOrderStatus = async (req, res) => {
+  try {
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
+    }
+
+    const order = await prisma.order.update({
+      where: { id },
+      data: { status },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        items: { include: { product: true } },
+      },
+    });
+
+    res.json(order);
+  } catch (err) {
+    console.error("updateOrderStatus error:", err);
     res.status(500).json({ message: err.message });
   }
 };
