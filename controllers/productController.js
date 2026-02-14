@@ -148,12 +148,14 @@ export const getRecentProducts = async (req, res) => {
 // Delete product
 export const deleteProduct = async (req, res) => {
   try {
+    // Check admin role
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Admins only" });
     }
 
     const { id } = req.params;
 
+    // Check if product exists
     const product = await prisma.product.findUnique({
       where: { id },
     });
@@ -162,19 +164,31 @@ export const deleteProduct = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // 🔥 FIRST: delete all cart items that reference this product
+    // Delete in the correct order to avoid foreign key constraints
+    // 1. Delete all order items that reference this product
+    await prisma.orderItem.deleteMany({
+      where: { productId: id },
+    });
+
+    // 2. Delete all cart items that reference this product
     await prisma.cartItem.deleteMany({
       where: { productId: id },
     });
 
-    // 🔥 THEN: delete the product
+    // 3. Finally, delete the product itself
     await prisma.product.delete({
       where: { id },
     });
 
-    res.status(200).json({ message: "Product deleted successfully" });
+    res.status(200).json({ 
+      message: "Product deleted successfully",
+      success: true 
+    });
   } catch (error) {
-    console.error("Delete Error:", error);
-    res.status(500).json({ message: "Failed to delete product" });
+    console.error("Delete Product Error:", error);
+    res.status(500).json({ 
+      message: error.message || "Failed to delete product",
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
