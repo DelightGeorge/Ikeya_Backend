@@ -84,6 +84,12 @@ model Order {
   address           String
   phone             String
   paystackReference String?
+  alternatePhone    String?
+  companyName       String?
+  deliveryNote      String?
+  deliveryArea      String?
+  deliveryState     String?
+  deliveryFee       Int     @default(250000)
 
   // Added onDelete: Cascade - If User is deleted, Orders are deleted
   user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
