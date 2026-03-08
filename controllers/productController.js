@@ -203,17 +203,43 @@ export const updateStock = async (req, res) => {
     const { id } = req.params;
     const { stock } = req.body;
 
-    if (typeof stock !== "number" || stock < 0) {
-      return res.status(400).json({ message: "Invalid stock value" });
+    // Better validation with detailed error messages
+    if (stock === undefined || stock === null) {
+      return res.status(400).json({ 
+        message: "Stock value is required",
+        received: stock 
+      });
+    }
+
+    const stockNum = Number(stock);
+    
+    if (isNaN(stockNum)) {
+      return res.status(400).json({ 
+        message: "Stock must be a number",
+        received: stock,
+        type: typeof stock
+      });
+    }
+
+    if (stockNum < 0) {
+      return res.status(400).json({ 
+        message: "Stock cannot be negative",
+        received: stockNum
+      });
     }
 
     const product = await prisma.product.update({
       where: { id },
-      data: { stock },
+      data: { stock: stockNum },
     });
 
-    res.json(product);
+    res.json({ 
+      success: true,
+      message: "Stock updated",
+      product 
+    });
   } catch (error) {
+    console.error("Update stock error:", error);
     res.status(500).json({ message: error.message });
   }
 };
