@@ -192,3 +192,28 @@ export const deleteProduct = async (req, res) => {
     });
   }
 };
+
+// Update product stock
+export const updateStock = async (req, res) => {
+  try {
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ message: "Admins only" });
+    }
+
+    const { id } = req.params;
+    const { stock } = req.body;
+
+    if (typeof stock !== "number" || stock < 0) {
+      return res.status(400).json({ message: "Invalid stock value" });
+    }
+
+    const product = await prisma.product.update({
+      where: { id },
+      data: { stock },
+    });
+
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

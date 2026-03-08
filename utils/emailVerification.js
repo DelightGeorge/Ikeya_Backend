@@ -3,12 +3,12 @@ import crypto from "crypto";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = "Ikeyà <hello@ikeyaoriginnals.site>";
+const FROM_EMAIL = "Ikeyá <hello@ikeyaoriginnals.site>";
 const ADMIN_EMAIL = "ikeyaoriginals@gmail.com";
 
 const brandHeader = `
   <div style="text-align:center; margin-bottom:30px;">
-    <h1 style="text-transform:uppercase; letter-spacing:6px; color:#000; margin:0; font-size:28px;">Ikeyà</h1>
+    <h1 style="text-transform:uppercase; letter-spacing:6px; color:#000; margin:0; font-size:28px;">Ikeyá</h1>
     <p style="text-transform:uppercase; font-size:9px; letter-spacing:3px; color:#92400e; margin-top:5px;">
       Originality is the only luxury
     </p>
@@ -32,7 +32,7 @@ const sendEmail = async ({ to, subject, html, text }) => {
           ${brandHeader}
           ${html}
           <p style="margin-top:40px; font-size:11px; color:#aaa; text-align:center; text-transform:uppercase; letter-spacing:2px;">
-            © ${new Date().getFullYear()} Ikeyà Originals
+            © ${new Date().getFullYear()} Ikeyá Originals
           </p>
         </div>
       `,
@@ -58,10 +58,10 @@ const sendEmail = async ({ to, subject, html, text }) => {
 export const sendWelcomeEmail = async (email, name) => {
   await sendEmail({
     to: email,
-    subject: "Welcome to Ikeyà",
+    subject: "Welcome to Ikeyá",
     html: `
       <h2 style="text-align:center;">Welcome, ${name}</h2>
-      <p style="text-align:center;">Your journey into the house of Ikeyà has begun.</p>
+      <p style="text-align:center;">Your journey into the house of Ikeyá has begun.</p>
     `,
   });
 };
@@ -70,7 +70,7 @@ export const sendLoginEmail = async (email, token) => {
   const loginUrl = `${process.env.FRONTEND_URL}/verify-login?token=${encodeURIComponent(token)}`;
   await sendEmail({
     to: email,
-    subject: "Your Ikeyà Login Link",
+    subject: "Your Ikeyá Login Link",
     html: `
       <h2 style="text-align:center;">Sign In Request</h2>
       <div style="text-align:center; margin:40px 0;">
@@ -87,7 +87,7 @@ export const sendResetEmail = async (email, token) => {
   const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${encodeURIComponent(token)}`;
   await sendEmail({
     to: email,
-    subject: "Reset Your Ikeyà Password",
+    subject: "Reset Your Ikeyá Password",
     html: `
       <h2 style="text-align:center;">Password Reset Request</h2>
       <p style="text-align:center;">Click the button below to reset your password:</p>
@@ -201,7 +201,7 @@ export const sendOrderReceiptEmail = async ({ email, name, order }) => {
 
   await sendEmail({
     to: email,
-    subject: `Order Confirmed — ${orderId} | Ikeyà`,
+    subject: `Order Confirmed — ${orderId} | Ikeyá`,
     html,
     text: `Your order ${orderId} has been confirmed. Total: ${formatMoney(order.totalAmount)}. We'll be in touch soon.`,
   });
@@ -297,7 +297,7 @@ export const sendAdminOrderAlertEmail = async ({ order, customerName, customerEm
 
   await sendEmail({
     to: ADMIN_EMAIL,
-    subject: `🚨 New Order ${orderId} — ${formatMoney(order.totalAmount)} | Ikeyà`,
+    subject: `🚨 New Order ${orderId} — ${formatMoney(order.totalAmount)} | Ikeyá`,
     html,
     text: `New order from ${customerName} (${customerEmail}). Amount: ${formatMoney(order.totalAmount)}. Ref: ${order.paystackReference}`,
   });
@@ -344,9 +344,9 @@ export const sendNewsletterWelcomeEmail = async (email) => {
 
   await sendEmail({
     to: email,
-    subject: "Welcome to The Style Club — Ikeyà Originals",
+    subject: "Welcome to The Style Club — Ikeyá Originals",
     html,
-    text: `Welcome to the Ikeyà Style Club! You'll now receive early access to drops and hair care tips. Visit us at ${process.env.FRONTEND_URL}/shop`,
+    text: `Welcome to the Ikeyá Style Club! You'll now receive early access to drops and hair care tips. Visit us at ${process.env.FRONTEND_URL}/shop`,
   });
 };
 
@@ -391,7 +391,7 @@ export const sendAdminNewsletterAlertEmail = async (subscriberEmail) => {
 
   await sendEmail({
     to: ADMIN_EMAIL,
-    subject: `New Subscriber — ${subscriberEmail} | Ikeyà`,
+    subject: `New Subscriber — ${subscriberEmail} | Ikeyá`,
     html,
     text: `New newsletter subscriber: ${subscriberEmail}`,
   });

@@ -6,6 +6,7 @@ import {
   getRecentProducts,
   getProductsByType,
   deleteProduct,
+  updateStock,
 } from "../controllers/productController.js";
 import authMiddleware from "../middlewares/auth.js";
 import { upload } from "../config/cloudinary.js";
@@ -28,5 +29,6 @@ router.post(
 
 // DELETE routes
 router.delete("/:id", authMiddleware, deleteProduct);
+router.patch("/:id/stock", authMiddleware, updateStock);
 
 export default router;
