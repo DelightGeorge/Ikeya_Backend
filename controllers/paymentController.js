@@ -1,8 +1,12 @@
 import fetch from "node-fetch";
 
-// Initialize payment with Paystack
 export const initializePayment = async (req, res) => {
   const { amount, email } = req.body;
+
+  // amount arrives from the frontend in NAIRA (e.g. 5000)
+  // Paystack requires KOBO, so we multiply here — and ONLY here
+  const amountInKobo = Math.round(amount * 100);
+
   try {
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
@@ -12,7 +16,7 @@ export const initializePayment = async (req, res) => {
       },
       body: JSON.stringify({
         email,
-        amount: amount * 100, // Paystack expects kobo
+        amount: amountInKobo, // ✅ kobo conversion happens exactly once
         currency: "NGN",
       }),
     });
@@ -23,16 +27,18 @@ export const initializePayment = async (req, res) => {
   }
 };
 
-// Verify payment after completion
 export const verifyPayment = async (req, res) => {
   const { reference } = req.params;
   try {
-    const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-      },
-    });
+    const response = await fetch(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        },
+      }
+    );
     const data = await response.json();
     res.status(200).json(data);
   } catch (err) {
