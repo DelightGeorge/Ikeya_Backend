@@ -58,6 +58,13 @@ model Product {
   createdAt DateTime @default(now())
 }
 
+model HeroImage {
+  id        String   @id @default(uuid())
+  imageUrl  String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model Cart {
   id     String     @id @default(uuid())
   userId String     @unique

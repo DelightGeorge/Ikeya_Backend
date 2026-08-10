@@ -10,6 +10,7 @@ import orderRoutes from "./routes/orderRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js"; // ✅ NEW
+import heroImageRoutes from "./routes/heroImageRoutes.js"; // ✅ NEW
 dotenv.config();
 
 const app = express();
@@ -32,6 +33,7 @@ app.use("/categories", categoryRoutes);  // /categories (GET, POST)
 app.use("/products", productRoutes);
 app.use("/payments", paymentRoutes);
 app.use("/newsletter", newsletterRoutes); // ✅ NEW
+app.use("/hero-images", heroImageRoutes); // ✅ NEW
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

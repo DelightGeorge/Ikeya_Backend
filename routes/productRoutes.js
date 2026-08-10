@@ -3,6 +3,7 @@ import {
   getProducts,
   getProductById,
   addProduct,
+  updateProduct,
   getRecentProducts,
   getProductsByType,
   deleteProduct,
@@ -27,8 +28,18 @@ router.post(
   addProduct
 );
 
+// PATCH routes
+// Auth is checked BEFORE the image upload here, so a non-admin request
+// never touches Cloudinary at all.
+router.patch(
+  "/:id",
+  authMiddleware,
+  upload.single("image"),
+  updateProduct
+);
+router.patch("/:id/stock", authMiddleware, updateStock);
+
 // DELETE routes
 router.delete("/:id", authMiddleware, deleteProduct);
-router.patch("/:id/stock", authMiddleware, updateStock);
 
 export default router;

@@ -100,6 +100,73 @@ export const addProduct = async (req, res) => {
   }
 };
 
+// Admin: Update a product (name, description, price, category, type, stock, and optionally image)
+export const updateProduct = async (req, res) => {
+  try {
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ message: "Admins only" });
+    }
+
+    const { id } = req.params;
+    const existing = await prisma.product.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const { name, description, price, category, type, stock } = req.body;
+    const data = {};
+
+    if (name !== undefined && name.trim() !== "") data.name = name.trim();
+    if (description !== undefined) data.description = description.trim();
+    if (type !== undefined && type.trim() !== "") data.type = type;
+
+    if (price !== undefined && price !== "") {
+      const parsedPrice = Number(price);
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        return res.status(400).json({ message: "Invalid price" });
+      }
+      data.price = Math.round(parsedPrice * 100);
+    }
+
+    if (stock !== undefined && stock !== "") {
+      const parsedStock = Number(stock);
+      if (isNaN(parsedStock) || parsedStock < 0) {
+        return res.status(400).json({ message: "Invalid stock value" });
+      }
+      data.stock = parsedStock;
+    }
+
+    if (category !== undefined && category.trim() !== "") {
+      const resolvedType = data.type || existing.type;
+      let categoryRecord = await prisma.category.findFirst({
+        where: { name: category.trim() },
+      });
+      if (!categoryRecord) {
+        categoryRecord = await prisma.category.create({
+          data: { name: category.trim(), type: resolvedType },
+        });
+      }
+      data.categoryId = categoryRecord.id;
+    }
+
+    // New image uploaded — multer/cloudinary already stored it, use its path
+    if (req.file) {
+      data.imageUrl = req.file.path;
+    }
+
+    const product = await prisma.product.update({
+      where: { id },
+      data,
+      include: { category: true },
+    });
+
+    res.json({ success: true, message: "Product updated", product });
+  } catch (err) {
+    console.error("Update Product Error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // ✅ FIXED: Removed `take: 5` — now returns ALL products
 export const getRecentProducts = async (req, res) => {
   try {
